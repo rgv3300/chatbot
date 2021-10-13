@@ -1,5 +1,10 @@
 {
-  "dependencies": {
-    "heroku": "^7.59.0"
-  }
+    "name": "chatbot-workplace",
+    "version": "1.0.0",
+    "engines": {
+        "node": "14.x"
+    },
+    "dependencies": {
+        "heroku": "^7.59.0"
+    }
 }
