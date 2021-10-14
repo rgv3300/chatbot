@@ -5,6 +5,8 @@
         "node": "14.x"
     },
     "dependencies": {
-        "heroku": "^7.59.0"
+        "dotenv": "^10.0.0",
+        "heroku": "^7.59.0",
+        "pg": "^8.7.1"
     }
 }
