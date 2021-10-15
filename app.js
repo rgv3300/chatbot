@@ -1,9 +1,11 @@
+require('dotenv').config()
+
 const 
     express = require('express'),
     bodyParser = require('body-parser'),
     app = express()
     fs = require('fs')
-const port = process.env.PORT || 3002
+const port = process.env.PORT || 8000
 
 app.use(bodyParser.json())   //body parser middleware
 
@@ -16,8 +18,8 @@ app.post('/webhook', (req,res) => {
 })
 
 //token verification
-app.get('/webhook',(req,res) => {
-    const VERIFY_TOKEN = process.env.VERIFY_TOKEN
+app.get('/webhook', (req,res) => {
+    const VERIFY_TOKEN = 'gnYTdLeuRP'
 
     const token = req.query['hub.verify_token']
 
