@@ -3,12 +3,12 @@ const
     bodyParser = require('body-parser'),
     app = express()
     fs = require('fs')
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 3002
 
 app.use(bodyParser.json())   //body parser middleware
 
 //webhook endpoing
-app.post('/webook', (req,res) => {
+app.post('/webhook', (req,res) => {
     let body = req.body
 
     console.log(body)
@@ -19,7 +19,6 @@ app.post('/webook', (req,res) => {
 app.get('/webhook',(req,res) => {
     const VERIFY_TOKEN = process.env.VERIFY_TOKEN
 
-    const mode = req.query['hub.mode']
     const token = req.query['hub.verify_token']
 
     if(token) {
