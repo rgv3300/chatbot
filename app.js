@@ -5,7 +5,8 @@ const
     bodyParser = require('body-parser'),
     app = express()
     fs = require('fs')
-const port = process.env.PORT || 8000
+const port = process.env.PORT || 8001
+
 
 app.use(bodyParser.json())   //body parser middleware
 
@@ -22,11 +23,12 @@ app.get('/webhook', (req,res) => {
     const VERIFY_TOKEN = 'gnYTdLeuRP'
 
     const token = req.query['hub.verify_token']
+    const challenge = req.query['hub.challenge']
 
     if(token) {
         if(token == VERIFY_TOKEN) {
             console.log('verified')
-            res.status(200)
+            res.status(200).send(challenge)
         } else {
             res.sendStatus(403)
         }
