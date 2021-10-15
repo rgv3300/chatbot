@@ -50,6 +50,6 @@ app.get('/webhook', (req,res) => {
 
 
 
-// app.listen(port, () => {
-//     console.log('Hello world!')
-// })
+app.listen(port, () => {
+    console.log('Hello world!')
+})
