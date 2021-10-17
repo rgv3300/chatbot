@@ -16,20 +16,22 @@ const ACCESS_TOKEN = process.env.ACCESS_TOKEN,
     VERIFY_TOKEN = process.env.VERIFY_TOKEN,
     DATABASE_URL = process.env.DATABASE_URL
 
-// creating app secret proof and time as required by graph api
+//creating app secret proof and time as required by graph api
 const appsecret_time = dayjs().unix()
 const appsecret_proof = crypto.createHmac('sha256',APP_SECRET).update(ACCESS_TOKEN+ '|' + appsecret_time).digest('hex') 
 
 console.log(appsecret_time + ' ' + appsecret_proof)
 
-let graphapi = "https://graph.facebook.com"
+let graphapi = "https://graph.facebook.com/v12.0"
+
 app.use(bodyParser.json())   //body parser middleware
 
 //handlers
 function messageHandler(sender_psid, received_message) {
-    let respone;
+    let response;
     console.log(sender_psid)
     if(received_message.text) {
+        
         response = {'text':`Testing testing you sent "${received_message.text}" to the bot.`}
     }
 
@@ -58,7 +60,6 @@ function sendAPI(sender_psid, response) {
         },
         data : payload
     }
-    
     axios(config)
     .then((response) => console.log(JSON.stringify(response.data)))
     .catch((error) => console.log(error))
@@ -68,7 +69,6 @@ function sendAPI(sender_psid, response) {
 //webhook endpoint event listener 
 app.post('/webhook', (req,res) => {
     let body = req.body
-
     if(body.object === 'page') {
         
         body.entry.forEach(entry => {
@@ -77,8 +77,9 @@ app.post('/webhook', (req,res) => {
             let sender_psid = webhook_event.sender.id
 
             if(webhook_event.message) {
-
+                
                 messageHandler(sender_psid,webhook_event.message)
+                
 
             } else if(webhook_event.postback) {
 
@@ -86,6 +87,9 @@ app.post('/webhook', (req,res) => {
 
             }
         })
+                        // 200 response is necessary
+
+        res.sendStatus(200)
     } else {
         res.sendStatus(404);
     }
