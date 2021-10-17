@@ -7,7 +7,7 @@ const express = require('express'),
     crypto = require('crypto')
     dayjs = require('dayjs')
 
-const port = process.env.PORT || 8001
+const port = process.env.PORT || 8000
 
 //APP secrets
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN,
@@ -20,16 +20,41 @@ const ACCESS_TOKEN = process.env.ACCESS_TOKEN,
 const appsecret_time = dayjs().unix()
 const appsecret_proof = crypto.createHmac('sha256',APP_SECRET).update(ACCESS_TOKEN+ '|' + appsecret_time).digest('hex') 
 
+console.log(appsecret_time + ' ' + appsecret_proof)
 
 const graphapi = "https://graph.facebook.com" 
 
 app.use(bodyParser.json())   //body parser middleware
 
+//handlers
+function messageHandler(sender_psid, received_message) {}
+
+function postbackHandler(sender_psid,received_postback) {}
+
 //webhook endpoint event listener 
 app.post('/webhook', (req,res) => {
-    
+    let body = req.body
 
-    res.status(200).send('Event received')
+    if(body.object === 'page') {
+        
+        body.entry.forEach(entry => {
+            
+            let webhook_event = entry.messaging[0]
+            let sender_psid = webhook_event.sender.id
+
+            if(webhook_event.message) {
+
+                messageHandler(sender_psid,webhook_event.message)
+
+            } else if(webhook_event.postback) {
+
+                postbackHandler(sender_psid,webhook_event.postback)
+
+            }
+        })
+    } else {
+        res.sendStatus(404);
+    }
 })
 
 //token verification
@@ -44,7 +69,7 @@ app.get('/webhook', (req,res) => {
         } else {
             res.sendStatus(403)
         }
-    }
+    } 
 })
 
 
