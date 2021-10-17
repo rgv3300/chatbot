@@ -2,7 +2,7 @@ require('dotenv').config()
 
 const express = require('express'),
     bodyParser = require('body-parser'),
-    got = require('got'),
+    axios = require('axios').default,
     app = express(),
     crypto = require('crypto')
     dayjs = require('dayjs')
@@ -22,14 +22,48 @@ const appsecret_proof = crypto.createHmac('sha256',APP_SECRET).update(ACCESS_TOK
 
 console.log(appsecret_time + ' ' + appsecret_proof)
 
-const graphapi = "https://graph.facebook.com" 
-
+let graphapi = "https://graph.facebook.com"
 app.use(bodyParser.json())   //body parser middleware
 
 //handlers
-function messageHandler(sender_psid, received_message) {}
+function messageHandler(sender_psid, received_message) {
+    let respone;
+    console.log(sender_psid)
+    if(received_message.text) {
+        response = {'text':`Testing testing you sent "${received_message.text}" to the bot.`}
+    }
+
+    sendAPI(sender_psid, response)
+}
 
 function postbackHandler(sender_psid,received_postback) {}
+
+// send api to reply to messages
+function sendAPI(sender_psid, response) {
+
+    let req_body = {
+        "recipient" : {
+            "id": sender_psid
+        },
+        "message": response
+    }
+
+    let payload = JSON.stringify(req_body)
+
+    let config = {
+        method:'post',
+        url: `${graphapi}/me/messages?access_token=${ACCESS_TOKEN}&appsecret_proof=${appsecret_proof}&appsecret_time=${appsecret_time}`,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data : payload
+    }
+    
+    axios(config)
+    .then((response) => console.log(JSON.stringify(response.data)))
+    .catch((error) => console.log(error))
+}
+
 
 //webhook endpoint event listener 
 app.post('/webhook', (req,res) => {
