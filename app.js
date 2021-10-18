@@ -6,6 +6,7 @@ const express = require('express'),
     app = express(),
     crypto = require('crypto')
     dayjs = require('dayjs')
+    fs = require('fs')
 
 const port = process.env.PORT || 8000
 
@@ -69,6 +70,10 @@ function sendAPI(sender_psid, response) {
 //webhook endpoint event listener 
 app.post('/webhook', (req,res) => {
     let body = req.body
+    fs.writeFile('./body.txt',JSON.stringify(body),(error) => {
+        console.log(error)
+    })
+
     if(body.object === 'page') {
         
         body.entry.forEach(entry => {
@@ -87,7 +92,7 @@ app.post('/webhook', (req,res) => {
 
             }
         })
-                        // 200 response is necessary
+        // 200 response is necessary
 
         res.sendStatus(200)
     } else {
