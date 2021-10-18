@@ -1,0 +1,22 @@
+{
+    "attachment": {
+        "type": "template",
+        "payload": {
+            "template_type": "generic",
+            "elements": [{
+                "title": "Please choose one of the below options.",
+                "buttons": [{
+                        "type": "postback",
+                        "title": "Add an expense.",
+                        "payload": "expense"
+                    },
+                    {
+                        "type": "postback",
+                        "title": "Get categorized report.",
+                        "payload": "report"
+                    }
+                ]
+            }]
+        }
+    }
+}

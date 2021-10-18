@@ -1,4 +1,7 @@
+const { send } = require('process')
+
 require('dotenv').config()
+
 
 const express = require('express'),
     bodyParser = require('body-parser'),
@@ -7,6 +10,8 @@ const express = require('express'),
     crypto = require('crypto')
     dayjs = require('dayjs')
     fs = require('fs')
+    menu = require('./templates/menu.json')
+    expenseMenu = require('./templates/expenseMenu.json')
 
 const port = process.env.PORT || 8000
 
@@ -21,7 +26,9 @@ const ACCESS_TOKEN = process.env.ACCESS_TOKEN,
 const appsecret_time = dayjs().unix()
 const appsecret_proof = crypto.createHmac('sha256',APP_SECRET).update(ACCESS_TOKEN+ '|' + appsecret_time).digest('hex') 
 
-console.log(appsecret_time + ' ' + appsecret_proof)
+console.log(appsecret_proof + ' ' + appsecret_time)
+// acceptable greetings
+const acceptGreet = ['Hello','Hi','hello','hi']
 
 let graphapi = "https://graph.facebook.com/v12.0"
 
@@ -29,17 +36,55 @@ app.use(bodyParser.json())   //body parser middleware
 
 //handlers
 function messageHandler(sender_psid, received_message) {
-    let response;
-    console.log(sender_psid)
-    if(received_message.text) {
-        
-        response = {'text':`Testing testing you sent "${received_message.text}" to the bot.`}
-    }
 
-    sendAPI(sender_psid, response)
+    let response;
+
+    if(!(acceptGreet.includes(received_message.text))) {
+
+        response = {
+            "text" : `Sorry, I am still learning and cannot process your request for "${received_message.text}". Please choose one of the options to proceed.`
+        }
+        
+        sendAPI(sender_psid, response)
+    }
+    sendAPI(sender_psid, menu)
 }
 
-function postbackHandler(sender_psid,received_postback) {}
+function postbackHandler(sender_psid,received_postback) {
+
+    let response;
+
+    let payload = received_postback.payload;
+
+    if(payload === 'expense') {
+        
+        response = expenseMenu
+        
+
+    } else if(payload === 'report') {
+        
+        response = {"text": `Your total expense is {{expense}}. You spent the most on {{category}}`}
+        
+
+    } else if(payload === "supplies" || "salaries" || "subscriptions") {
+
+        response = {"text": "Please insert the expense amount in $."}
+
+    }
+
+
+    if(payload === 'report') {
+        
+        const response2 = {"text": `To get categorize list of expenses type "expense by category" or type "Hey" to start over.`}
+        
+        sendAPI(sender_psid,response2)
+   
+    } 
+        
+    sendAPI(sender_psid,response)
+
+    
+}
 
 // send api to reply to messages
 function sendAPI(sender_psid, response) {
@@ -61,19 +106,20 @@ function sendAPI(sender_psid, response) {
         },
         data : payload
     }
-    axios(config)
-    .then((response) => console.log(JSON.stringify(response.data)))
-    .catch((error) => console.log(error))
+   
+        axios(config)
+        .then((res) => {
+            
+        },(error) => {
+            console.log(error)
+        })
+    
 }
 
 
 //webhook endpoint event listener 
 app.post('/webhook', (req,res) => {
     let body = req.body
-    fs.writeFile('./body.txt',JSON.stringify(body),(error) => {
-        console.log(error)
-    })
-
     if(body.object === 'page') {
         
         body.entry.forEach(entry => {
@@ -82,10 +128,9 @@ app.post('/webhook', (req,res) => {
             let sender_psid = webhook_event.sender.id
 
             if(webhook_event.message) {
-                
+            
                 messageHandler(sender_psid,webhook_event.message)
-                
-
+            
             } else if(webhook_event.postback) {
 
                 postbackHandler(sender_psid,webhook_event.postback)
@@ -93,8 +138,8 @@ app.post('/webhook', (req,res) => {
             }
         })
         // 200 response is necessary
-
         res.sendStatus(200)
+        
     } else {
         res.sendStatus(404);
     }
@@ -119,5 +164,5 @@ app.get('/webhook', (req,res) => {
 
 
 app.listen(port, () => {
-    console.log('Hello world!')
+    console.log(`Chatbot is running on ${port}`)
 })
