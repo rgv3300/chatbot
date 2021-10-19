@@ -26,7 +26,7 @@ const appsecret_proof = crypto.createHmac('sha256',APP_SECRET).update(ACCESS_TOK
 
 console.log(appsecret_proof + ' ' + appsecret_time)
 // acceptable greetings
-const acceptGreet = ['Hello','Hi','hello','hi','hey','Hey']
+const acceptGreet = ['Hello','Hi','hello','hi','hey','Hey','getstarted']
 
 const expenses = ['supplies','salaries','legal','insurance','tax','maintenance','advertisement']
 
@@ -34,19 +34,52 @@ let graphapi = "https://graph.facebook.com/v12.0"
 
 app.use(bodyParser.json())   //body parser middleware
 
+//greeting 
+
+function setGetStarted() {
+
+    let payload = JSON.stringify({"get_started" : {"payload":"getstarted"}})
+
+    let conf = {
+        method:'post',
+        url: `${graphapi}/me/messenger_profile?access_token=${ACCESS_TOKEN}&appsecret_proof=${appsecret_proof}&appsecret_time=${appsecret_time}`,
+        headers: { 
+            'Content-Type': 'application/json'
+          },
+        data : payload
+    }
+
+    axios(conf)
+        .then((res) => {
+            
+        },(error) => {
+            console.log(error)
+        })
+
+}
+
+
+
 //handlers
 function messageHandler(sender_psid, received_message) {
 
     let response;
 
-    if(!(acceptGreet.includes(received_message.text))) {
+    if(!(acceptGreet.includes(received_message))) {
 
         response = {
-            "text" : `Sorry, I am still learning and cannot process your request for "${received_message.text}". Please choose one of the options to proceed.`
+            "text" : `Sorry, I am still learning and cannot process your request for "${received_message}". Please choose one of the options to proceed.`
         }
         
-        sendAPI(sender_psid, response)
+
+    } else {
+
+        response = { "text": `Howdy! I will help you manage your office expenses and generate useful reports for you! Type "Hey" anytime to start over` }
+    
     }
+
+    sendAPI(sender_psid, response)
+
     sendAPI(sender_psid, menu)
 }
 
@@ -54,9 +87,9 @@ function postbackHandler(sender_psid,received_postback) {
 
     let response;
 
-    let payload = received_postback.payload;
+    let payload = received_postback;
 
-    if(payload === 'expense') {
+    if(payload === 'expense' ) {
         
         response = expenseMenu
         
@@ -65,9 +98,7 @@ function postbackHandler(sender_psid,received_postback) {
         
         response = {"text": `Your total expense is {{expense}}. You spent the most on {{category}}`}
         
-
-    } 
-
+    }
 
     if(payload === 'report') {
         
@@ -79,14 +110,13 @@ function postbackHandler(sender_psid,received_postback) {
         
     sendAPI(sender_psid,response)
 
-    
 }
 
 function quickReplyHandler(sender_psid,received_message) {
 
-    if(expenses.includes(received_message.quick_reply.payload)) {
+    if(expenses.includes(received_message)) {
         
-        let response = {"text" : `Please enter the amount for "${received_message.quick_reply.payload}" category`}
+        let response = {"text" : `Please enter the amount for "${received_message}" category`}
 
         sendAPI(sender_psid, response)
     }
@@ -114,7 +144,7 @@ function sendAPI(sender_psid, response) {
         data : payload
     }
    
-        axios(config)
+    axios(config)
         .then((res) => {
             
         },(error) => {
@@ -129,7 +159,7 @@ function sendAPI(sender_psid, response) {
 app.post('/webhook', (req,res) => {
 
     let body = req.body
-    console.log(body.entry[0].messaging[0].message)
+    console.log(body.entry[0].messaging[0])
     if(body.object === 'page') {
         
         body.entry.forEach(entry => {
@@ -142,17 +172,23 @@ app.post('/webhook', (req,res) => {
 
                 if(webhook_event.message.quick_reply) {
 
-                    quickReplyHandler(sender_psid, webhook_event.message)
+                    quickReplyHandler(sender_psid, webhook_event.message.quick_reply.payload)
 
                 } else {
 
-                    messageHandler(sender_psid,webhook_event.message)
+                    messageHandler(sender_psid,webhook_event.message.text)
                 }
             
             } else if(webhook_event.postback) {
 
-                postbackHandler(sender_psid,webhook_event.postback)
+                if(webhook_event.postback.payload === 'getstarted') {
 
+                    messageHandler(sender_psid,webhook_event.postback.payload)
+
+                } else {
+
+                    postbackHandler(sender_psid,webhook_event.postback.payload)
+                }
             } 
         })
         // 200 response is necessary
@@ -167,12 +203,17 @@ app.post('/webhook', (req,res) => {
 app.get('/webhook', (req,res) => {
     
     const token = req.query['hub.verify_token']
+
     const challenge = req.query['hub.challenge']
 
     if(token) {
+
         if(token == VERIFY_TOKEN) {
+
             res.status(200).send(challenge)
+
         } else {
+
             res.sendStatus(403)
         }
     } 
@@ -182,5 +223,7 @@ app.get('/webhook', (req,res) => {
 
 
 app.listen(port, () => {
+    setGetStarted()
     console.log(`Chatbot is running on ${port}`)
+
 })
