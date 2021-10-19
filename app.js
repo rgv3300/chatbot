@@ -1,5 +1,3 @@
-const { send } = require('process')
-
 require('dotenv').config()
 
 
@@ -28,7 +26,9 @@ const appsecret_proof = crypto.createHmac('sha256',APP_SECRET).update(ACCESS_TOK
 
 console.log(appsecret_proof + ' ' + appsecret_time)
 // acceptable greetings
-const acceptGreet = ['Hello','Hi','hello','hi']
+const acceptGreet = ['Hello','Hi','hello','hi','hey','Hey']
+
+const expenses = ['supplies','salaries','legal','insurance','tax','maintenance','advertisement']
 
 let graphapi = "https://graph.facebook.com/v12.0"
 
@@ -66,11 +66,7 @@ function postbackHandler(sender_psid,received_postback) {
         response = {"text": `Your total expense is {{expense}}. You spent the most on {{category}}`}
         
 
-    } else if(payload === "supplies" || "salaries" || "subscriptions") {
-
-        response = {"text": "Please insert the expense amount in $."}
-
-    }
+    } 
 
 
     if(payload === 'report') {
@@ -84,6 +80,17 @@ function postbackHandler(sender_psid,received_postback) {
     sendAPI(sender_psid,response)
 
     
+}
+
+function quickReplyHandler(sender_psid,received_message) {
+
+    if(expenses.includes(received_message.quick_reply.payload)) {
+        
+        let response = {"text" : `Please enter the amount for "${received_message.quick_reply.payload}" category`}
+
+        sendAPI(sender_psid, response)
+    }
+
 }
 
 // send api to reply to messages
@@ -117,25 +124,36 @@ function sendAPI(sender_psid, response) {
 }
 
 
+
 //webhook endpoint event listener 
 app.post('/webhook', (req,res) => {
+
     let body = req.body
+    console.log(body.entry[0].messaging[0].message)
     if(body.object === 'page') {
         
         body.entry.forEach(entry => {
             
             let webhook_event = entry.messaging[0]
+
             let sender_psid = webhook_event.sender.id
 
             if(webhook_event.message) {
-            
-                messageHandler(sender_psid,webhook_event.message)
+
+                if(webhook_event.message.quick_reply) {
+
+                    quickReplyHandler(sender_psid, webhook_event.message)
+
+                } else {
+
+                    messageHandler(sender_psid,webhook_event.message)
+                }
             
             } else if(webhook_event.postback) {
 
                 postbackHandler(sender_psid,webhook_event.postback)
 
-            }
+            } 
         })
         // 200 response is necessary
         res.sendStatus(200)

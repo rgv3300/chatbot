@@ -1,27 +1,39 @@
 {
-    "attachment": {
-        "type": "template",
-        "payload": {
-            "template_type": "generic",
-            "elements": [{
-                "title": "Please choose the expense type.",
-                "buttons": [{
-                        "type": "postback",
-                        "title": "Office Supplies",
-                        "payload": "supplies"
-                    },
-                    {
-                        "type": "postback",
-                        "title": "Salary Disbursements",
-                        "payload": "salaries"
-                    },
-                    {
-                        "type": "postback",
-                        "title": "Subscriptions",
-                        "payload": "subscriptions"
-                    }
-                ]
-            }]
+    "text": "Please choose the expense type:",
+    "quick_replies": [{
+            "content_type": "text",
+            "title": "supplies",
+            "payload": "supplies"
+        },
+        {
+            "content_type": "text",
+            "title": "salaries",
+            "payload": "salaries"
+        },
+        {
+            "content_type": "text",
+            "title": "legal",
+            "payload": "legal"
+        },
+        {
+            "content_type": "text",
+            "title": "insurance",
+            "payload": "insurance"
+        },
+        {
+            "content_type": "text",
+            "title": "tax",
+            "payload": "tax"
+        },
+        {
+            "content_type": "text",
+            "title": "maintenance",
+            "payload": "maintenance"
+        },
+        {
+            "content_type": "text",
+            "title": "advertisement",
+            "payload": "advertisement"
         }
-    }
+    ]
 }
