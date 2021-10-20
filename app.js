@@ -33,14 +33,7 @@ let expenseSelected = [];
 
 //mock db
 const dbMock = new Map()
-const expense = new Map()
-expense.set("supplies",[])
-expense.set("salaries",[])
-expense.set("legal",[])
-expense.set("insurance",[])
-expense.set("tax",[])
-expense.set("maintenance",[])
-expense.set("advertisement",[])
+
 
 // expense calculator 
 function expenseCalculator(sender_psid) {
@@ -183,8 +176,17 @@ function expenseHandler(sender_psid, amount) {
 
     if(!dbMock.has(id)) {
 
-        dbMock.set(id,expense)
+        const expense = new Map()
 
+        expense.set("supplies",[])
+        expense.set("salaries",[])
+        expense.set("legal",[])
+        expense.set("insurance",[])
+        expense.set("tax",[])
+        expense.set("maintenance",[])
+        expense.set("advertisement",[])
+
+        dbMock.set(id,expense)
     }
 
     dbMock.get(id).get(expenseSelected[sender_psid]).push(parseInt(amount))
@@ -231,6 +233,7 @@ function sendAPI(sender_psid, response) {
 }
 // verifying the post req sent by facebook
 function verifySignature(req, res, buf) {
+
     var signature = req.headers['x-hub-signature'];
 
     if (!signature) {
