@@ -12,7 +12,7 @@
                     },
                     {
                         "type": "postback",
-                        "title": "Get categorized report.",
+                        "title": "Get expense report.",
                         "payload": "report"
                     }
                 ]
