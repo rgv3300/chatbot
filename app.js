@@ -1,5 +1,3 @@
-const { send } = require('process')
-
 require('dotenv').config()
 
 
@@ -7,13 +5,12 @@ const express = require('express'),
     bodyParser = require('body-parser'),
     axios = require('axios').default,
     app = express(),
-    crypto = require('crypto')
-    dayjs = require('dayjs')
-    fs = require('fs')
-    menu = require('./templates/menu.json')
-    expenseMenu = require('./templates/expenseMenu.json')
-
-const port = process.env.PORT || 8000
+    crypto = require('crypto'),
+    dayjs = require('dayjs'),
+    fs = require('fs'),
+    menu = require('./templates/menu.json'),
+    expenseMenu = require('./templates/expenseMenu.json'),
+    port = process.env.PORT || 8000
 
 //APP secrets
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN,
@@ -24,11 +21,17 @@ const ACCESS_TOKEN = process.env.ACCESS_TOKEN,
 // acceptable greetings
 const acceptGreet = ['Hello','Hi','hello','hi','hey','Hey','getstarted']
 
+//acceptable expenses
 const expenses = ['supplies','salaries','legal','insurance','tax','maintenance','advertisement']
+
+//graph api
+const graphapi = "https://graph.facebook.com/v12.0"
 
 //state variables
 let chatState = [] 
-let expenseSelected;
+let expenseSelected = [];
+
+//mock db
 const dbMock = new Map()
 const expense = new Map()
 expense.set("supplies",[])
@@ -38,14 +41,26 @@ expense.set("insurance",[])
 expense.set("tax",[])
 expense.set("maintenance",[])
 expense.set("advertisement",[])
-//
 
-let graphapi = "https://graph.facebook.com/v12.0"
+// expense calculator 
+function expenseCalculator(sender_psid) {
 
-app.use(bodyParser.json())   //body parser middleware
+    const id = sender_psid
+
+    let expCategorized = []
+
+    expCategorized[id] = []
+
+    dbMock.get(id).forEach((expense) => {
+        expCategorized[id].push(expense.reduce((acc,res) => acc + res,0))
+    })
+
+    let total = expCategorized[id].reduce((acc,res) => acc + res,0)
+
+    return {total, expCategorized}
+}
 
 //greeting 
-
 function setGetStarted() {
 
     let payload = JSON.stringify({"get_started" : {"payload":"getstarted"}})
@@ -114,16 +129,33 @@ function postbackHandler(sender_psid,received_postback) {
         sendAPI(sender_psid,response)
 
     } else if(payload === 'report') {
-        //calculate expense
-        response = {"text": `Your total expense is {{expense}}.`}
-        
+
+        let id = parseInt(sender_psid)
+
+        if(dbMock.has(id)) {
+
+            const report = expenseCalculator(id)
+            console.log(report)
+
+            response = { "text": `Your total expense is ${report.total}$.\nYour total categorized expenditure is : 
+                'supplies' = ${report.expCategorized[id][0]}$,
+                'salaries'= ${report.expCategorized[id][1]}$,
+                'legal'= ${report.expCategorized[id][2]}$,
+                'insurance'= ${report.expCategorized[id][3]}$,
+                'tax'= ${report.expCategorized[id][4]}$,
+                'maintenance'= ${report.expCategorized[id][5]}$,
+                'advertisement'= ${report.expCategorized[id][6]}$`}
+
+        } else {
+
+            response = {"text": `Your total expense is 0$.`}
+
+        }
+
         sendAPI(sender_psid,response)
 
         sendAPI(sender_psid,menu)
     }
-        
-    
-
 }
 
 function quickReplyHandler(sender_psid,received_message) {
@@ -132,9 +164,9 @@ function quickReplyHandler(sender_psid,received_message) {
 
         chatState[sender_psid] = 1
 
-        expenseSelected = received_message
+        expenseSelected[sender_psid] = received_message
 
-        console.log(chatState[sender_psid] + ' ' + expenseSelected)
+        console.log(chatState[sender_psid] + ' ' + expenseSelected[sender_psid])
 
         let response = {"text" : `Please enter the amount for "${received_message}" category. Amount should only be numeric`}
 
@@ -155,9 +187,9 @@ function expenseHandler(sender_psid, amount) {
 
     }
 
-    dbMock.get(id).get(expenseSelected).push(parseInt(amount))
+    dbMock.get(id).get(expenseSelected[sender_psid]).push(parseInt(amount))
 
-    let response = {"text": `Your expense has been successfully added to "${expenseSelected}" category.`}
+    let response = {"text": `Your expense has been successfully added to "${expenseSelected[sender_psid]}" category.`}
     
     sendAPI(sender_psid,response)
 
@@ -165,7 +197,7 @@ function expenseHandler(sender_psid, amount) {
 
     //reset state after adding expenses
     chatState[sender_psid] = 0
-    expenseSelected = ''
+    expenseSelected[sender_psid] = ''
 }
 
 // send api to reply to messages
@@ -197,14 +229,37 @@ function sendAPI(sender_psid, response) {
         })
     
 }
+// verifying the post req sent by facebook
+function verifySignature(req, res, buf) {
+    var signature = req.headers['x-hub-signature'];
 
+    if (!signature) {
 
+        throw new Error('Signature not included in the request.')
+
+    } else {
+        var elements = signature.split('=');
+        var signatureHash = elements[1];
+
+        var expectedHash = crypto.createHmac('sha1', APP_SECRET)
+                        .update(buf)
+                        .digest('hex');
+
+        if (signatureHash != expectedHash) {
+            throw new Error('Couldn\'t validate the request signature.');
+
+        }
+    }
+}
+
+//body parser middleware
+app.use(bodyParser.json({verify: verifySignature}))   
 
 //webhook endpoint event listener 
 app.post('/webhook', (req,res) => {
 
     let body = req.body
-    console.log(body.entry[0].messaging[0])
+
     if(body.object === 'page') {
         
         body.entry.forEach(entry => {
@@ -267,9 +322,6 @@ app.get('/webhook', (req,res) => {
         }
     } 
 })
-
-
-
 
 app.listen(port, () => {
     setGetStarted()
