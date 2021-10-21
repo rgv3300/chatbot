@@ -234,17 +234,19 @@ function sendAPI(sender_psid, response) {
 // verifying the post req sent by facebook
 function verifySignature(req, res, buf) {
 
-    var signature = req.headers['x-hub-signature'];
+    let signature = req.headers['x-hub-signature'];
 
     if (!signature) {
 
         throw new Error('Signature not included in the request.')
 
     } else {
-        var elements = signature.split('=');
-        var signatureHash = elements[1];
 
-        var expectedHash = crypto.createHmac('sha1', APP_SECRET)
+        let elements = signature.split('=');
+        
+        let signatureHash = elements[1];
+
+        let expectedHash = crypto.createHmac('sha1', APP_SECRET)
                         .update(buf)
                         .digest('hex');
 
